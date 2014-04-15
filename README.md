@@ -1,2 +1,4 @@
-real_world_haskell
+Real World Haskell
 ==================
+
+Exercies from the book at http://book.realworldhaskell.org/read/index.html
