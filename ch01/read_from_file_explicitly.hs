@@ -1,6 +1,3 @@
--- file: ch01/WC.hs
--- lines beginning with "--" are comments.
-
 main = do
    src <- readFile "quux.txt"
    putStr $ wordCount src
