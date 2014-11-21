@@ -10,7 +10,9 @@ module Lab2 where
 
 toDigits :: Integer -> [Integer]
 toDigits 0 = []
-toDigits x = (toDigits (x `div` 10)) ++ [x `mod` 10]
+toDigits x
+  | x >= 0 = (toDigits (x `div` 10)) ++ [x `mod` 10]
+  | x < 0 = error "No negatives"
 
 -- ===================================
 -- Ex. 1
