@@ -44,15 +44,28 @@ sumDigits xs = foldr (+) 0 $ concat (map toDigits xs)
 -- ===================================
 
 isValid :: Integer -> Bool
-isValid x = ((sumDigits . doubleSecond . toDigitsRev) x) `mod` 10 == 0
+isValid x = calculation `mod` 10 == 0
+  where calculation = (sumDigits . doubleSecond . toDigitsRev) x
 
 
 -- ===================================
 -- Ex. 5
 -- ===================================
-    
+
+-- Original supplied function:
+-- ===================================
+-- numValid :: [Integer] -> Integer
+-- numValid xs = sum . map (\_ -> 1) $ filter isValid xs
+
+-- This is almost identical:
+-- ===================================
+-- numValid :: [Integer] -> Int
+-- numValid = length . filter isValid
+
+-- to be identical:
+-- ===================================
 numValid :: [Integer] -> Integer
-numValid xs = sum . map (\_ -> 1) $ filter isValid xs
+numValid = toInteger . length . filter isValid
 
 
 creditcards :: [Integer]
