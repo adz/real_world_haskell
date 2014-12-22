@@ -1,5 +1,4 @@
 module Lab5 where
-
 import Control.Monad
 
 data Concurrent a = Concurrent ((a -> Action) -> Action)
@@ -17,7 +16,6 @@ instance Show Action where
 -- ===================================
 -- Ex. 0
 -- ===================================
-
 action :: Concurrent a -> Action
 action (Concurrent c) = c continuation
     where continuation = (\_ -> Stop)
@@ -32,33 +30,67 @@ stop = Concurrent (\continuation -> Stop)
 -- Ex. 2
 -- ===================================
 atom :: IO a -> Concurrent a
-atom io = Concurrent (
-  \continuation ->
-    Atom (io >>= \io_result -> return (continuation io_result))
-    )
-{-atom io = Concurrent (\continuation -> Atom runItThenContinue)-}
-    {-where runItThenContinue = do-}
-            {-io_result <- io-}
-            {-return (continuation io_result)-}
+{-atom io = Concurrent $-}
+  {-\continuation ->-}
+    {-Atom (io >>= \io_result -> return (continuation io_result))-}
+
+-- Using do notation:
+atom io = Concurrent $
+  \continuation -> Atom $ do io_result <- io
+                             return $ continuation io_result
 
 
 -- ===================================
 -- Ex. 3
 -- ===================================
-
+{-forks its argument by -}
+{-turning it into an action -}
+{-and continues by passing () as the input to the continuation-}
 fork :: Concurrent a -> Concurrent ()
-fork = error "You have to implement fork"
+-- pretty sure all this is wrong:
+{-fork concurrent = Concurrent $ \continuation -> action concurrent-}
+{-fork concurrent = Concurrent $ \continuation -> Fork (action concurrent) (action concurrent)-}
+{-fork concurrent = \x -> (concurrent (\c -> action concurrent))-}
+
+-- but this *might* be right:
+fork concurrent = Concurrent $ \continuation -> Fork (action concurrent) (continuation ())
 
 par :: Concurrent a -> Concurrent a -> Concurrent a
-par = error "You have to implement par"
-
+par conc1 conc2 = Concurrent $ \continuation -> Fork (action conc1) (action conc2)
 
 -- ===================================
 -- Ex. 4
 -- ===================================
 
+-- First work out with unwrapped (no Concurrent)
+{-bind :: ((a -> Action) -> Action) -> (a -> ((b -> Action) -> Action)) -> ((b -> Action) -> Action)-}
+{-bind f g = \b -> (f (\a -> ((g a) b)))-}
+{-bind f g = \b -> (f (\a -> g a b))-}
+
 instance Monad Concurrent where
-    (Concurrent f) >>= g = error "You have to implement >>="
+    -- Type sig is: {-(>>=) :: Concurrent a -> (a -> Concurrent b) -> Concurrent b-}
+    -- ...but it's already defined by Monad
+    --
+    -- First cut:
+    {-(Concurrent f) >>= g = Concurrent $-}
+        {-\b -> f $ \a -> (get_concurrent_b (g a)) b-}
+        {-where get_concurrent_b (Concurrent concurrent_b) = concurrent_b-}
+
+    -- Nicer layout
+    {-(Concurrent f) >>= g =-}
+      {-Concurrent $-}
+        {-\b ->-}
+          {-f $-}
+            {-\a ->-}
+              {-(get_concurrent_b (g a)) b-}
+        {-where-}
+          {-get_concurrent_b (Concurrent concurrent_b) = concurrent_b-}
+
+    -- Try using named parts
+    (Concurrent f) >>= g = Concurrent $ continuation
+        where
+          continuation = \b -> f $ \a -> get_bm (g a) b
+          get_bm (Concurrent bm) = bm
     return x = Concurrent (\c -> c x)
 
 
@@ -67,7 +99,12 @@ instance Monad Concurrent where
 -- ===================================
 
 roundRobin :: [Action] -> IO ()
-roundRobin = error "You have to implement roundRobin"
+roundRobin [] = return ()
+roundRobin (a:as) = case a of
+    Atom io_action -> do next_action <- io_action
+                         roundRobin $ as ++ [next_action]
+    Fork a1 a2     -> roundRobin $ as ++ [a1, a2]
+    Stop           -> roundRobin as
 
 -- ===================================
 -- Tests
