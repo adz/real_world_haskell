@@ -103,7 +103,7 @@ roundRobin [] = return ()
 roundRobin (a:as) = case a of
     Atom io_action -> do next_action <- io_action
                          roundRobin $ as ++ [next_action]
-    Fork a1 a2     -> roundRobin $ as ++ [a1, a2]
+    Fork a1 a2     -> roundRobin $ [a1, a2] ++ as
     Stop           -> roundRobin as
 
 -- ===================================
@@ -118,6 +118,12 @@ ex1 = do atom (putStr "Haskell")
          fork (loop $ genRandom 7331) 
          loop $ genRandom 42
          atom (putStrLn "")
+
+ex2 :: Concurrent ()
+ex2 = do atom (putStr "Hello")
+         fork (loop $ genRandom 7331) 
+         atom (putStrLn " mate")
+         loop [1,2,3]
 
 
 -- ===================================
