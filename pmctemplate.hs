@@ -72,19 +72,19 @@ instance Monad Concurrent where
     -- ...but it's already defined by Monad
     --
     -- First cut:
-    {-(Concurrent f) >>= g = Concurrent $-}
-        {-\b -> f $ \a -> (get_concurrent_b (g a)) b-}
-        {-where get_concurrent_b (Concurrent concurrent_b) = concurrent_b-}
+    (Concurrent f) >>= g = Concurrent $
+        \b -> f $ \a -> (get_concurrent_b (g a)) b
+        where get_concurrent_b (Concurrent concurrent_b) = concurrent_b
 
     -- Nicer layout
-    {-(Concurrent f) >>= g =-}
-      {-Concurrent $-}
-        {-\b ->-}
-          {-f $-}
-            {-\a ->-}
-              {-(get_concurrent_b (g a)) b-}
-        {-where-}
-          {-get_concurrent_b (Concurrent concurrent_b) = concurrent_b-}
+    (Concurrent f) >>= g =
+      Concurrent $
+        \b ->
+          f $
+            \a ->
+              (get_concurrent_b (g a)) b
+        where
+          get_concurrent_b (Concurrent concurrent_b) = concurrent_b
 
     -- Try using named parts
     (Concurrent f) >>= g = Concurrent $ continuation
@@ -93,6 +93,10 @@ instance Monad Concurrent where
           get_bm (Concurrent bm) = bm
     return x = Concurrent (\c -> c x)
 
+    -- Try using Alex's case
+    (Concurrent f) >>= g = Concurrent $
+       \b -> f $ \a -> (case (g a) of (Concurrent bm) -> bm) b
+    return x = Concurrent (\c -> c x)
 
 -- ===================================
 -- Ex. 5
